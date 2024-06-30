@@ -1,0 +1,13 @@
+[Unit]
+Description=GoCheckIP service
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=root
+ExecStart=/usr/local/bin/gocheckip -port 8080
+
+[Install]
+WantedBy=multi-user.target
