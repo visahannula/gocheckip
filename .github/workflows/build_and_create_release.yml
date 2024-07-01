@@ -1,0 +1,46 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Build, upload artifact and release
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Copy build binary to bin/
+      id: upload
+      run: |
+        mkdir -p bin/
+        cp gocheckip bin/
+    
+    - name: Upload binary to artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: gocheckip
+        path: bin/gocheckip
+
+    - name: Create a GH release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: bin/gocheckip
