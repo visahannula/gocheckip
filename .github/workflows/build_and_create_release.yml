@@ -5,43 +5,52 @@ name: Build, upload artifact and release
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-permissions:
-  contents: write
+    tags:
+      - "v*.*.*"
 
 jobs:
+  job_build:
+    name: Build, test and upload
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-  build:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+            go-version: '1.21'
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: Copy build binary to bin/
+        id: upload
+        run: |
+            mkdir -p bin/
+            cp gocheckip bin/
+        
+      - name: Upload binary to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+            name: gocheckip
+            path: bin/gocheckip
+
+  job_release:
+    permissions:
+      contents: write
+    needs: job_build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-
-    - name: Build
-      run: go build -v ./...
-
-    - name: Test
-      run: go test -v ./...
-
-    - name: Copy build binary to bin/
-      id: upload
-      run: |
-        mkdir -p bin/
-        cp gocheckip bin/
-    
-    - name: Upload binary to artifacts
-      uses: actions/upload-artifact@v4
+    - run: echo "Ref=${{ github.ref.name }}"
+    - name: Download artifact
+      uses: actions/download-artifact@v4
       with:
         name: gocheckip
-        path: bin/gocheckip
-
     - name: Create a GH release
       uses: softprops/action-gh-release@v2
       with:
